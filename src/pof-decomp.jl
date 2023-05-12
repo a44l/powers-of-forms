@@ -78,10 +78,6 @@ is_algebraically_deg3_independent = function(u; digits=7)
     is_independent = round.(μ_min; digits=digits) > 0;
     return is_independent, μ_min;
 end
-
-φ = function(p, pof::PofDecomposition)
-    return subs(p, pof.vars=>pof.u);
-end
     
 set_φ_matrices! = function(pof::PofDecomposition)
     u = pof.u;
