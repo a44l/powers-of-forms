@@ -6,19 +6,13 @@ Here are some installation instructions, partially written by ChatGPT.
 
 1. **Install Julia:** Download the latest stable version of Julia from the [official Julia website](https://julialang.org/downloads/). Follow the installation instructions specific to your operating system.
 
-2. **Install Jupyter Notebook:** 
-Open a terminal or command prompt. Run the following command to install Jupyter Notebook using Julia's package manager (REPL):
-    ```bash
-    	julia -e 'using Pkg; Pkg.add("IJulia")'
-    ```
-
-3. **Clone the GitHub project:** 
+2. **Clone the GitHub project:** 
 Open a terminal and navigate to the desired directory where you want to clone the project. Run the following command to clone the project:
      ```bash
      git clone https://github.com/a44l/powers-of-forms
      ```
 
-4. **Set up the project environment:**
+3. **Set up the project environment:**
    - Navigate to the project's directory in the terminal or command prompt.
    - Launch the Julia REPL by running the `julia` command.
    - Type `]` in order to switch to package mode. 
@@ -29,7 +23,7 @@ Open a terminal and navigate to the desired directory where you want to clone th
      instantiate
      ```
 
-5. **Start Jupyter Notebook:**
+4. **Start Jupyter Notebook:**
 	- In the Julia REPL, exit the package manager mode by pressing the `backspace` key.
 	- Type the following command to start Jupyter Notebook:
 		```julia-repl
