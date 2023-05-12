@@ -16,9 +16,9 @@ opt_tolerance = 1000;
 @polyvar X[1:N];
 
 # -------------- paths to write results of computations
-filepath = "data/experiment-3-gaussian-tracefree-study/"; 
-seriesname = "m=n/";
-M(n) = n;
+filepath = "data/experiment-3/"; 
+seriesname = "m=n-1/";
+M(n) = n-1;
 
 # for each n=1:N, we generate R samples of a sum of M(n) Gaussian trace-free quadratics.
 # we check for each whether their sum of squares is uniquely representable.  
@@ -74,5 +74,5 @@ for n=N_min:N
     p_unique_sos[n] = mean(df_n.m .== df_n.dim_sosupp);
 end
 filepath_probabilities = string(filepath, seriesname, "probabilities.csv");
-df_prob = DataFrame(n=1:N, p_pointed=p_pointed, p_unique_sos=p_unique_sos);
+df_prob = DataFrame(n=N_min:N, p_pointed=p_pointed[N_min:N], p_unique_sos=p_unique_sos[N_min:N]);
 CSV.write(filepath_probabilities, df_prob);
