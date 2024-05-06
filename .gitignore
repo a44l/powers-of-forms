@@ -34,3 +34,5 @@ Manifest.toml
 # some specific files
 plots.ipynb
 
+# some specific folders
+examples/

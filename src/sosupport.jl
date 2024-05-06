@@ -19,8 +19,8 @@ if !@isdefined default_solver
 end
 
 mutable struct SOSDataContainer
-    M_E 
-    G; 
+    M_E;
+    G;
     G_boundary;
     SOSDataContainer() = new();
 end
@@ -38,12 +38,12 @@ mutable struct SOSData
     dim_sosupp::Int; # rank of G
     sosupp;  # image of G
     # some relative interior point of the Gram spectrahedron Gram(f) 
-    G; # Gram Matrix type
+    G; # Gram Matrix
     σ; # SOS decomposition of f corresponding to G
     λ; # eigenvalues of G
     monomials; # monomials used in relint sos representation
     # some boundary point of the Gram spectrahedron Gram(f) 
-    G_boundary; # Matrix type 
+    G_boundary; # Matrix 
     σ_boundary; # SOS decomposition of f corresponding to G_boundary
     λ_boundary; # eigenvalues of G_boundary
     M_E; # moment matrix of relative interior point of dual cone C_f cut out by the hyperplane {E | E(f) = 0}.
@@ -53,7 +53,6 @@ mutable struct SOSData
     corank::SOSDataContainer; # coranks of G, G_boundary and M_E. 
     solve_time; # solver time to compute G and M_E
     solve_time_boundary; # solver time to compute G_boundary
-    #time; # computation time for calc_sos_attributes!
     SOSData(f, solver, silent) = new(f, Symbol(solver), silent, degree(f) ÷ 2, variables(f), length(variables(f)));
 end
 

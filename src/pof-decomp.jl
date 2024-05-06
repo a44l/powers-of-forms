@@ -43,16 +43,22 @@ raw"""
     Outputs: 
     + ``(\lambda_1,q_1),\ldots,(\lambda_m,q_m)``, in any order. 
 """
-pof_decompose = function(f_2, f_3; digits=7)
+pof_decompose = function(f_2, f_3; digits=7, u=nothing)
     pof = PofDecomposition(f_2, f_3);
     if degree(f_2) ÷ 2 ≠ pof.k 
         error("Degrees of f_2 and f_3 are not compatible.");
         return;
     end
-    # calculate the sum of squares support. 
-    # parameters are set to high accuracy. 
-    pof.sosdata = calc_sos_attributes(f_2, digits=digits, feas_tolerance=1e-16, opt_tolerance=8000)
-    pof.u = pof.sosdata.sosupp;
+    
+    if u === nothing
+        # if no space was given, calculate the sum of squares support. 
+        # parameters are set to high accuracy. 
+        pof.sosdata = calc_sos_attributes(f_2, digits=digits, feas_tolerance=1e-16, opt_tolerance=8000);
+        pof.u = pof.sosdata.sosupp;
+    else 
+        pof.u = u;
+        pof.N = length(u);
+    end
     pof.N = length(pof.u);
     μ_min = set_φ_matrices!(pof);
     is_independent = round.(μ_min; digits=digits) > 0;
@@ -63,13 +69,14 @@ pof_decompose = function(f_2, f_3; digits=7)
     @polyvar Y[1:pof.N];
     pof.Y = Y;
     compute_φ_preimages!(pof, f_2, f_3);
-    pof.ℓ, pof.λ = positive_weighted_jennrich(pof.g_2, pof.g_3);
+    pof.ℓ, pof.λ = positive_weighted_sylvester(pof.g_2, pof.g_3);
     pof.q = [l(pof.Y=>pof.u) for l in pof.ℓ]; # substitute back via φ
     return pof;
 end
 
-is_algebraically_deg3_independent = function(u; digits=7)
+is_cubically_independent = function(u; digits=7)
     N = length(u);
+    k = degree.(u[1].x[1])
     vars = variables(u);
     monoms = monomials(vars, 3k);
     UUU = [u[i]*u[j]*u[k] for i=1:N, j=1:N, k=1:N if i≤j≤k];
@@ -99,13 +106,15 @@ compute_φ_preimages! = function(pof, f_2, f_3)
     f_3_vec = coefficients(f_3, monoms_3);
     pof.g_2 = pof.M_φ2\f_2_vec ⋅ monomials(pof.Y, 2);
     pof.g_3 = pof.M_φ3\f_3_vec ⋅ monomials(pof.Y, 3);
+    pof.g_2 = pof.g_2(pof.Y=>reverse(pof.Y)); # the monomials function by default sorts Y as Y[N],...,Y[1]
+    pof.g_3 = pof.g_3(pof.Y=>reverse(pof.Y)); # here, we correct for this
 end
 
-positive_weighted_jennrich = function(g_2, g_3)
+positive_weighted_sylvester = function(g_2, g_3)
     Y = variables(g_2);
     v = randn(length(Y));
     g_v = (1.0/3)*differentiate(g_3, Y)⋅v;
-    u, M_2, M_v = jennrich_matrix_representations(g_2, g_v);
+    u, M_2, M_v = sylvester_matrix_representations(g_2, g_v);
     m = length(u); # rank of g_2. Note: might be smaller than the number of variables Y!
     eig_dec = eigen(M_v, M_2); # generalized eigendecomposition
     μ = eig_dec.values;
@@ -113,12 +122,12 @@ positive_weighted_jennrich = function(g_2, g_3)
     u_v = [u[i](Y=>v) for i=1:m]; # evaluate u in v. 
     a = [(μ[j]/(b[j]⋅u_v))*b[j] for j=1:m]; # correct the multiples 
     ℓ = [a[i]⋅u for i=1:m]; # convert back to linear forms
-    λ = jennrich_find_weights(g_2, ℓ); # find the missing weights
+    λ = sylvester_find_weights(g_2, ℓ); # find the missing weights
     return ℓ, λ;
 end
 
 """
-    jennrich_matrix_representations
+    sylvester_matrix_representations
 
     input: 
     +  g_2, g_v: two quadratic forms which have the same image.
@@ -127,7 +136,7 @@ end
     2. M_2: some matrix such that g_2 = u^T * M_2 * u. 
     3. M_v: some matrix such that g_v = u^T * M_v * u.
 """
-jennrich_matrix_representations = function (g_2, g_v; digits=7)
+sylvester_matrix_representations = function (g_2, g_v; digits=7)
     Y = variables(g_2);
     N = length(Y);
     qf_to_symmatrix(qf) = [(i==j ? 1 : 1/2) * float(DynamicPolynomials.coefficient(qf, Y[i]*Y[j])) for i=1:N, j=1:N];
@@ -150,7 +159,7 @@ jennrich_matrix_representations = function (g_2, g_v; digits=7)
 end
 
 
-jennrich_find_weights = function (g_2, ℓ)
+sylvester_find_weights = function (g_2, ℓ)
     Y = variables(ℓ); 
     m = length(ℓ);
     monoms_2 = monomials(Y, 2);
@@ -158,6 +167,22 @@ jennrich_find_weights = function (g_2, ℓ)
     g_2_vec = coefficients(g_2, monoms_2);
     μ = L\g_2_vec;
     return μ;
+end
+
+sylvester_produce_g2 = function(g_3)
+    Y = variables(g_3); 
+    m = length(Y);
+    qf_to_symmatrix(qf) = [(i==j ? 1 : 1/2) * float(DynamicPolynomials.coefficient(qf, Y[i]*Y[j])) for i=1:m, j=1:m];
+    M = [];
+    for i=1:m
+        g_i = (1.0/3).*differentiate(g_3, Y[i]);
+        push!(M, qf_to_symmatrix(g_i));
+    end
+    model = Model(eval(solver).Optimizer);
+    @variable(model, a[1:m]);
+    @constraint(model, sum(a[i]*M[i] for i=1:m) in PSDCone());
+    optimize!(model);
+    return Y'*sum(value(a[i])*M[i] for i=1:m)*Y
 end
 
 
